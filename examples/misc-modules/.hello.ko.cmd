@@ -1,0 +1,1 @@
+cmd_/home/so2011/examples/misc-modules/hello.ko := ld -m elf_i386 -m elf_i386 -r -o /home/so2011/examples/misc-modules/hello.ko /home/so2011/examples/misc-modules/hello.o /home/so2011/examples/misc-modules/hello.mod.o
