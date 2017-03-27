@@ -15,7 +15,7 @@ void pop();
 void push();
 void show();
 
-void show(void *args){
+void *show(void *args){
 	struct stack_el *stack = (struct stack_el) *args
 	struct stack_el *proximo;
 
@@ -24,16 +24,16 @@ void show(void *args){
 		*proximo = proximo->next;
 	}	
 
-	return;
+	return (void) 1;
 }
 
-void pop(){
-	struct stack_el *stack = (struct stack_el) *args
+void *pop(void *args){
+	struct stack_el stack = (struct stack_el) *args
 	struct stack_el *proximo;
 
 	*proximo = stack->next;
 	free(stack);
 	*stack = *proximo 
 
-	return (void*)(stack->str);
+	return (void*)(proximo->str);
 }
