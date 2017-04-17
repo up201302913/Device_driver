@@ -28,10 +28,13 @@ int echo_open(struct inode *inode, struct file *filep){
 //  struct cdev *dev;
   //dev = container_of(inode->i_cdev,struct cdev,cdev);
   filep->private_data = inode->i_cdev;
+  if(filep->private_data == NULL)
+    printk(KERN_WARNING "PRIVATE DATA NOT INIT");
 
   printk(KERN_WARNING "INITED private_data of file\n");
 
-  return 1;
+  nonseekable_open(inode,filep);
+  return 0;
 }
 
 int echo_release(struct inode *inode,struct file *filep){
@@ -47,10 +50,53 @@ int echo_flush(struct inode *inode,fl_owner_t id){
   return 0;
 }
 
+ssize_t echo_read(struct file *filep, 
+                  char __user *buff, 
+                  size_t count, 
+                  loff_t *offp){
+
+
+  return 0;
+}
+ssize_t echo_write(struct file *filep,
+                   const char __user *buff, 
+                   size_t count, 
+                   loff_t *offp){
+
+  char *kern_buff = kmalloc(sizeof(char)*(count+1),GFP_KERNEL);
+  if(kern_buff == NULL){
+    printk(KERN_WARNING "FAILED TO ALLOC KERNEL BUFFER\n");
+    return -1;
+  }
+  printk("COUNT %d \n",count);
+  int num = copy_from_user(kern_buff,buff,count);
+  if(num == 0){
+    printk(KERN_WARNING "COPY_FROM_USER SUCCESSFUL\n");
+  }
+  else{
+    printk(KERN_WARNING "COULD NOT COPY %d BYTES FROM USER\n",num);
+  }
+
+   kern_buff[count-num] = '\0';
+   
+  if(kern_buff[count-num] != '\0'){
+    printk("CANT PRINT; EXITING");
+    return -1;
+  }
+  while(*(kern_buff) != '\0'){
+    printk("%c",*(kern_buff));
+    kern_buff++;
+  }
+  return count-num;
+}
+
 struct file_operations echo_fops = {
   .owner =      THIS_MODULE,
   .open =       echo_open,
-//  .release =    echo_release,
+  .release =    echo_release,
+  .write  =     echo_write,
+  .read   =     echo_read,
+  .llseek =     no_llseek,
 //  .flush  =     echo_flush,
 
 };
@@ -90,16 +136,19 @@ static int echo_init(void)
   }
 
 	printk(KERN_ALERT "MAJOR NUMBER: %d\n",echo_major);
-	return 0;
+	return result;
 }
 
 
 
 static void echo_exit(void)
 {
-	printk(KERN_ALERT "Fairwell major %d\n",echo_major);
+
+  printk(KERN_ALERT "Fairwell major %d\n",echo_major);
   cdev_del(echo_cdev);
-	unregister_chrdev_region( MKDEV(echo_major,0),echo_devs);
+	
+  unregister_chrdev_region( MKDEV(echo_major,0),echo_devs);
+
 }
 
 module_init(echo_init);
