@@ -1,7 +1,7 @@
-cmd_/host/lab2/echo/echo.o := gcc -m32 -Wp,-MD,/host/lab2/echo/.echo.o.d  -nostdinc -isystem /usr/lib/gcc/i486-linux-gnu/4.1.2/include -D__KERNEL__ -Iinclude  -include include/linux/autoconf.h -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs -fno-strict-aliasing -fno-common -O2 -pipe -msoft-float -mpreferred-stack-boundary=2  -march=i686  -mregparm=3 -ffreestanding -maccumulate-outgoing-args -DCONFIG_AS_CFI=1 -DCONFIG_AS_CFI_SIGNAL_FRAME=1 -Iinclude/asm-i386/mach-default -fomit-frame-pointer  -fno-stack-protector -Wdeclaration-after-statement -Wno-pointer-sign   -DMODULE -D"KBUILD_STR(s)=\#s" -D"KBUILD_BASENAME=KBUILD_STR(echo)"  -D"KBUILD_MODNAME=KBUILD_STR(echo)" -c -o /host/lab2/echo/.tmp_echo.o /host/lab2/echo/echo.c
+cmd_/host/Device_driver/lab2/echo/echo.o := gcc -m32 -Wp,-MD,/host/Device_driver/lab2/echo/.echo.o.d  -nostdinc -isystem /usr/lib/gcc/i486-linux-gnu/4.1.2/include -D__KERNEL__ -Iinclude  -include include/linux/autoconf.h -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs -fno-strict-aliasing -fno-common -O2 -pipe -msoft-float -mpreferred-stack-boundary=2  -march=i686  -mregparm=3 -ffreestanding -maccumulate-outgoing-args -DCONFIG_AS_CFI=1 -DCONFIG_AS_CFI_SIGNAL_FRAME=1 -Iinclude/asm-i386/mach-default -fomit-frame-pointer  -fno-stack-protector -Wdeclaration-after-statement -Wno-pointer-sign   -DMODULE -D"KBUILD_STR(s)=\#s" -D"KBUILD_BASENAME=KBUILD_STR(echo)"  -D"KBUILD_MODNAME=KBUILD_STR(echo)" -c -o /host/Device_driver/lab2/echo/.tmp_echo.o /host/Device_driver/lab2/echo/echo.c
 
-deps_/host/lab2/echo/echo.o := \
-  /host/lab2/echo/echo.c \
+deps_/host/Device_driver/lab2/echo/echo.o := \
+  /host/Device_driver/lab2/echo/echo.c \
   include/linux/module.h \
     $(wildcard include/config/modules.h) \
     $(wildcard include/config/modversions.h) \
@@ -333,8 +333,8 @@ deps_/host/lab2/echo/echo.o := \
   include/asm/uaccess.h \
     $(wildcard include/config/x86/intel/usercopy.h) \
     $(wildcard include/config/x86/wp/works/ok.h) \
-  /host/lab2/echo/echo.h \
+  /host/Device_driver/lab2/echo/echo.h \
 
-/host/lab2/echo/echo.o: $(deps_/host/lab2/echo/echo.o)
+/host/Device_driver/lab2/echo/echo.o: $(deps_/host/Device_driver/lab2/echo/echo.o)
 
-$(deps_/host/lab2/echo/echo.o):
+$(deps_/host/Device_driver/lab2/echo/echo.o):

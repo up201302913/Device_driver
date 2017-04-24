@@ -15,19 +15,21 @@
  #include <linux/aio.h>
  #include <linux/cdev.h>  /* cdev*/
  #include <asm/uaccess.h>
+ #include "serial_reg.h"
 #include "echo.h"
 MODULE_LICENSE("Dual BSD/GPL");
 
 int echo_major = ECHO_MAJOR;
 int echo_devs = ECHO_DEVS;
 
-struct cdev *echo_cdev = NULL;
+struct echo_dev *echo_devices = NULL;
 
 int echo_open(struct inode *inode, struct file *filep){
 
-//  struct cdev *dev;
-  //dev = container_of(inode->i_cdev,struct cdev,cdev);
-  filep->private_data = inode->i_cdev;
+  struct echo_dev *dev;
+  dev = container_of(inode->i_cdev,struct echo_dev,cdev);
+
+  filep->private_data = dev;
   if(filep->private_data == NULL)
     printk(KERN_WARNING "PRIVATE DATA NOT INIT");
 
@@ -50,26 +52,33 @@ int echo_flush(struct inode *inode,fl_owner_t id){
   return 0;
 }
 
-ssize_t echo_read(struct file *filep, 
-                  char __user *buff, 
-                  size_t count, 
+ssize_t echo_read(struct file *filep,
+                  char __user *buff,
+                  size_t count,
                   loff_t *offp){
 
+  struct echo_dev *dev = filep->private_data;
+
+  printk("NUMERO CHARS LIDOS %d\n", dev->cnt);
 
   return 0;
 }
 ssize_t echo_write(struct file *filep,
-                   const char __user *buff, 
-                   size_t count, 
+                   const char __user *buff,
+                   size_t count,
                    loff_t *offp){
-
+  int num;
   char *kern_buff = kmalloc(sizeof(char)*(count+1),GFP_KERNEL);
+
+  struct echo_dev *dev = filep->private_data;
+
   if(kern_buff == NULL){
     printk(KERN_WARNING "FAILED TO ALLOC KERNEL BUFFER\n");
     return -1;
   }
   printk("COUNT %d \n",count);
-  int num = copy_from_user(kern_buff,buff,count);
+
+  num = copy_from_user(kern_buff,buff,count);
   if(num == 0){
     printk(KERN_WARNING "COPY_FROM_USER SUCCESSFUL\n");
   }
@@ -78,11 +87,15 @@ ssize_t echo_write(struct file *filep,
   }
 
    kern_buff[count-num] = '\0';
-   
+
   if(kern_buff[count-num] != '\0'){
     printk("CANT PRINT; EXITING");
     return -1;
   }
+
+  dev->cnt = count-num;
+//  printk("CHARS NO DEIVCE %d",dev->cnt);
+
   while(*(kern_buff) != '\0'){
     printk("%c",*(kern_buff));
     kern_buff++;
@@ -101,13 +114,25 @@ struct file_operations echo_fops = {
 
 };
 
+static void echo_setup(struct echo_dev *dev, int index ){
+  int devno = MKDEV(echo_major,index);
+  int err;
 
+  cdev_init(&dev->cdev,&echo_fops);
+  dev->cdev.owner = THIS_MODULE;
+  dev->cdev.ops = &echo_fops;
+  err = cdev_add(&dev->cdev,devno,1);
+
+  if (err)
+		printk(KERN_NOTICE "Error %d adding echo%d", err, index);
+
+}
 
 static int echo_init(void)
 {
 	int result;
 	dev_t dev = MKDEV(echo_major, 0);
-
+  int i=0;
 	/*
 	 * Register your major, and accept a dynamic number.
 	 */
@@ -121,19 +146,16 @@ static int echo_init(void)
     printk(KERN_WARNING "echo: can't get major %d\n",echo_major);
     return result;
   }
-
-  echo_cdev = cdev_alloc();
-  if(echo_cdev == NULL){
+  echo_devices = kmalloc(echo_devs*sizeof(struct echo_dev), GFP_KERNEL);
+  if(echo_devices == NULL){
     printk(KERN_ALERT "FAILED TO ALLOC CDEV\n");
     return -1;
   }
-  echo_cdev->owner = THIS_MODULE; //por defeito, definido em /modules.h
-  echo_cdev->ops =   &echo_fops;
 
-  if(cdev_add(echo_cdev,dev,1) < 0){
-    printk(KERN_ALERT "FAILED CDEV_ADD\n");
-    return -1;
+  for(i = 0;i < echo_devs;i++){
+    echo_setup(echo_devices + i,i);
   }
+
 
 	printk(KERN_ALERT "MAJOR NUMBER: %d\n",echo_major);
 	return result;
@@ -143,10 +165,15 @@ static int echo_init(void)
 
 static void echo_exit(void)
 {
-
+  int i;
   printk(KERN_ALERT "Fairwell major %d\n",echo_major);
-  cdev_del(echo_cdev);
-	
+
+  for(i = 0;i < echo_devs;i++){
+    cdev_del(&echo_devices[i].cdev);
+  }
+
+    kfree(echo_devices);
+
   unregister_chrdev_region( MKDEV(echo_major,0),echo_devs);
 
 }

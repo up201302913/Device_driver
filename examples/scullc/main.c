@@ -148,7 +148,7 @@ int scullc_release (struct inode *inode, struct file *filp)
 }
 
 /*
- * Follow the list 
+ * Follow the list
  */
 struct scullc_dev *scullc_follow(struct scullc_dev *dev, int n)
 {
@@ -180,7 +180,7 @@ ssize_t scullc_read (struct file *filp, char __user *buf, size_t count,
 
 	if (down_interruptible (&dev->sem))
 		return -ERESTARTSYS;
-	if (*f_pos > dev->size) 
+	if (*f_pos > dev->size)
 		goto nothing;
 	if (*f_pos + count > dev->size)
 		count = dev->size - *f_pos;
@@ -256,7 +256,7 @@ ssize_t scullc_write (struct file *filp, const char __user *buf, size_t count,
 		goto nomem;
 	}
 	*f_pos += count;
- 
+
     	/* update the size */
 	if (dev->size < *f_pos)
 		dev->size = *f_pos;
@@ -456,7 +456,7 @@ static ssize_t scullc_aio_write(struct kiocb *iocb, const char __user *buf,
 }
 
 
- 
+
 
 /*
  * The fops
@@ -506,11 +506,11 @@ int scullc_trim(struct scullc_dev *dev)
 static void scullc_setup_cdev(struct scullc_dev *dev, int index)
 {
 	int err, devno = MKDEV(scullc_major, index);
-    
+
 	cdev_init(&dev->cdev, &scullc_fops);
 	dev->cdev.owner = THIS_MODULE;
 	dev->cdev.ops = &scullc_fops;
-	err = cdev_add (&dev->cdev, devno, 1);
+		err = cdev_add (&dev->cdev, devno, 1);
 	/* Fail gracefully if need be */
 	if (err)
 		printk(KERN_NOTICE "Error %d adding scull%d", err, index);
@@ -526,7 +526,7 @@ int scullc_init(void)
 {
 	int result, i;
 	dev_t dev = MKDEV(scullc_major, 0);
-	
+
 	/*
 	 * Register your major, and accept a dynamic number.
 	 */
@@ -539,8 +539,8 @@ int scullc_init(void)
 	if (result < 0)
 		return result;
 
-	
-	/* 
+
+	/*
 	 * allocate the devices -- we can't have them static, as the number
 	 * can be specified at load time
 	 */

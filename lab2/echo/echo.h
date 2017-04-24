@@ -47,5 +47,9 @@
 /*
  * The different configurable parameters
  */
+struct echo_dev { 
+	struct cdev cdev; // struct cdev for this echo device 
+	int cnt; // number of characters written to device 
+};
 extern int echo_major;     /* echo.c */
 extern int echo_devs;
