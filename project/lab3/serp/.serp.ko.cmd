@@ -1,0 +1,1 @@
+cmd_/host/Device_driver/project/lab3/serp/serp.ko := ld -m elf_i386 -m elf_i386 -r -o /host/Device_driver/project/lab3/serp/serp.ko /host/Device_driver/project/lab3/serp/serp.o /host/Device_driver/project/lab3/serp/serp.mod.o

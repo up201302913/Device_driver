@@ -352,7 +352,7 @@ void send_data(struct pipe *chan) {
 		} else if ( r == 0 ) {
 		    printf("No input from stdin \n");
 		} else {
-		    printf("Writing to socket ...\n");
+		    printf("\nWriting to socket ...\n");
 		    print(s, buf, r);
 		}
     }

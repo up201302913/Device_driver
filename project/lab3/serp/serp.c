@@ -184,7 +184,7 @@ static void serp_setup(struct serp_devs *dev, int index ){
   if (err < 0) {
     printk(KERN_NOTICE "Error %d at adding serp_cdevs %d!\n", err, index);
   } else {
-		printk(KERN_NOTICE "Device major %d with minor %d added successful!\n ", devno, index);
+		printk(KERN_NOTICE "Device major %d with minor %d added successful!\n ", major, devno);
   }
 
 }
@@ -224,7 +224,7 @@ static int serp_init(void) {
 
 	// Register your major, and accept a dynamic number.
 
-	if (serp_major)
+	if (major)
 		result = register_chrdev_region(dev, serp_minor, "serp");
 	else {
 		result = alloc_chrdev_region(&dev, 0, serp_minor, "serp");
@@ -251,7 +251,7 @@ static int serp_init(void) {
   }
 
 
-	printk(KERN_ALERT "MAJOR NUMBER: %d\n",serp_major);
+	printk(KERN_ALERT "MAJOR NUMBER: %d\n",major);
 
   return result;
 
