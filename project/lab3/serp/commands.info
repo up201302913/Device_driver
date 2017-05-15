@@ -1,0 +1,11 @@
+***READ***
+
+host: ./usocat (-b) - /tmp/vbox_ser_port1
+guest: cat < /dev/serp?   ? -[0 4]
+__________________________________________
+
+***WRITE***
+
+host: ./usocat /tmp/vbox_ser_port1 -
+guest: cat > /dev/serp?    ? - [0 4]
+___________________________________________
