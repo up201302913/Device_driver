@@ -2,6 +2,7 @@
 #include <linux/init.h>
 #include <linux/module.h>
 #include <linux/moduleparam.h>
+
 #include <linux/kernel.h>	/* printk() */
 #include <linux/slab.h>		/* kmalloc() */
 #include <linux/fs.h>		/* everything... */
@@ -11,8 +12,13 @@
 #include <linux/fcntl.h>	/* O_ACCMODE */
 #include <linux/aio.h>
 #include <linux/cdev.h>  /* cdev*/
-#include <asm/uaccess.h>
 #include <linux/delay.h>
+#include <linux/jiffies.h>
+#include <linux/sched.h>
+#include <linux/ioport.h>
+
+#include <asm/uaccess.h>
+#include <asm/io.h>
 
 #include "serial_reg.h"
 #include "serp.h"
