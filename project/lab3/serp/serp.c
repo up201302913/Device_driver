@@ -77,9 +77,10 @@ ssize_t serp_read(struct file *filep, char __user *buff, size_t count, loff_t *o
 
   int i=0;
 
-  unsigned char bitget = 0;
+  unsigned char bitgot = 0;
   unsigned long result;
-  ssize_t rec = 0;
+  ssize_t rect = 0;
+
 
   char *kernelbuffer = (char *)kzalloc(count*sizeof(char), GFP_KERNEL);
 
@@ -88,33 +89,35 @@ ssize_t serp_read(struct file *filep, char __user *buff, size_t count, loff_t *o
   }
 
   printk(KERN_INFO "%d", count);
+
   for(i = 0; i < count; i++) {
-    bitget = inb(ADR_COM1 + UART_LSR);
-    while ((bitget & UART_LSR_DR) == 0) {
+    bitgot = inb(ADR_COM1 + UART_LSR);
+    while ((bitgot & UART_LSR_DR) == 0) {
       msleep_interruptible(1);
-      bitget = inb(ADR_COM1 + UART_LSR);
+      bitgot = inb(ADR_COM1 + UART_LSR);
     }
-    if((bitget & (UART_LSR_FE | UART_LSR_OE | UART_LSR_PE)) != 0) {
+    if((bitgot & (UART_LSR_FE | UART_LSR_OE | UART_LSR_PE)) != 0) {
       kfree(kernelbuffer);
       return -EIO;
     } else {
       kernelbuffer[i] = inb(ADR_COM1 + UART_RX);
-      rec++;
+      rect++;
     }
   }
 
-  result = copy_to_user(buff, kernelbuffer, rec);
+  result = copy_to_user(buff, kernelbuffer, rect);
 
   if(result == 0) {
       printk(KERN_INFO "\nCaracters received: %ld\n", (count-result));
   } else{
       if(result > 0) {
-          printk(KERN_INFO "Missing %d caracters!\n", count - (int)bitget);
+          printk(KERN_INFO "Missing %d caracters!\n", count - (int)bitgot);
       }
   }
 
   kfree(kernelbuffer);
   return count-result;
+
 }
 
 ssize_t serp_write(struct file *filep, const char __user *buff, size_t count, loff_t *offp) {
@@ -172,7 +175,7 @@ struct file_operations serp_fops = {
 static void serp_setup(struct serp_devs *dev, int index ){
 
   int err;
-  int devno = MKDEV(serp_major, index);
+  int devno = MKDEV(major, minor + index);
 
 
   cdev_init(&dev->serp_cdevs, &serp_fops);
@@ -182,9 +185,9 @@ static void serp_setup(struct serp_devs *dev, int index ){
   err = cdev_add(&dev->serp_cdevs, devno, 1);
 
   if (err < 0) {
-    printk(KERN_NOTICE "Error %d at adding serp_cdevs %d!\n", err, index);
+    printk(KERN_INFO "Error %d at adding serp_cdevs %d!\n", err, index);
   } else {
-		printk(KERN_NOTICE "Device major %d with minor %d added successful!\n ", major, devno);
+		printk(KERN_INFO "Device major %d with minor %d added successful!\n ", major, index);
   }
 
 }
@@ -246,12 +249,14 @@ static int serp_init(void) {
     return -ENOMEM;
   }
 
+  memset(serp_devices, 0, serp_minor * sizeof(struct serp_devs));
+
   for(i = 0; i < serp_minor; i++){
     serp_setup(&serp_devices[i], i);
   }
 
 
-	printk(KERN_ALERT "MAJOR NUMBER: %d\n",major);
+	printk(KERN_NOTICE "MAJOR NUMBER: %d\n",major);
 
   return result;
 
