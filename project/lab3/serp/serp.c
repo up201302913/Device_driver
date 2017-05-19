@@ -25,14 +25,14 @@
 
 MODULE_LICENSE("Dual BSD/GPL");
 
-// clock signal with 115 200 Hz
-#define CLOCKB 115200;
 
 int serp_major = SERP_MAJOR;
 int serp_minor = SERP_MINOR;
 
 int major = 0, minor = 0;
-int read_flag=0,interrupted;
+
+int interrupt = 0;
+
 struct serp_devs *serp_devices = NULL;
 
 dev_t dev;
@@ -71,8 +71,8 @@ int serp_flush(struct inode *inode,fl_owner_t id){
 ssize_t serp_read(struct file *filep, char __user *buff, size_t count, loff_t *offp) {
 
   int i=0;
-  int gif = jiffies;
-
+  //int gif = jiffies;
+  unsigned long timeout = jiffies + msecs_to_jiffies(3000);
   unsigned char bitgot = 0;
   unsigned long result;
   ssize_t rect = 0;
@@ -84,38 +84,41 @@ ssize_t serp_read(struct file *filep, char __user *buff, size_t count, loff_t *o
     return -ENOMEM;
   }
 
-
-  if(interrupted == 1){
-    interrupted=0;
+  // Interrupt Flag
+  if(interrupt == 1){
+    interrupt = 0;
     return 0;
   }
+
   printk(KERN_INFO "Reading from buffer. buffer size: %d\n", count);
 
-  while((i<count) && !read_flag){
+  while(i<count){
 
     bitgot = inb(ADR_COM1 + UART_LSR);
     //star tmer
-    while (!read_flag && ((bitgot & UART_LSR_DR) == 0)) {
+    while ((bitgot & UART_LSR_DR) == 0) {
       msleep_interruptible(1);
-
       bitgot = inb(ADR_COM1 + UART_LSR);
-      if(jiffies > gif+msecs_to_jiffies(5000)){
-        read_flag = 1;
-        interrupted = 1;
-      }
     }
+    //timeout = jiffies;
+    if (time_after_eq(jiffies, timeout)) {
+        interrupt = 1;
+        break;
+    }
+
     if((bitgot & (UART_LSR_FE | UART_LSR_OE | UART_LSR_PE)) != 0) {
       kfree(kernelbuffer);
       return -EIO;
     } else {
       kernelbuffer[i] = inb(ADR_COM1 + UART_RX);
       rect++;
+      timeout = jiffies + msecs_to_jiffies(3000);
     }
-    gif = jiffies;
+
     i++;
   }
 
-  read_flag=0;
+  //read_flag=0;
   result = copy_to_user(buff, kernelbuffer, rect);
 
   if(result == 0) {
@@ -128,8 +131,8 @@ ssize_t serp_read(struct file *filep, char __user *buff, size_t count, loff_t *o
   }
 
   kfree(kernelbuffer);
-  return rect-1;
 
+  return rect-1;
 }
 
 ssize_t serp_write(struct file *filep, const char __user *buff, size_t count, loff_t *offp) {
@@ -139,8 +142,6 @@ ssize_t serp_write(struct file *filep, const char __user *buff, size_t count, lo
 
 	char *kernelbuffer = (char *) kzalloc(sizeof(char)*(count+1), GFP_KERNEL);
 
-	printk(KERN_INFO "Serp_open opened!\n");
-
 	if(kernelbuffer == NULL) {
 	     printk(KERN_ALERT "Error allocating memory for kernel buffer space!\n");
 		   return -ENOMEM;
@@ -149,8 +150,8 @@ ssize_t serp_write(struct file *filep, const char __user *buff, size_t count, lo
 	result = copy_from_user(kernelbuffer, buff, count);
 
 	if(result == 0){
-      printk(KERN_INFO "Message completed successful!\n");
-	    printk(KERN_INFO "WRITE %s \n", kernelbuffer);
+      printk(KERN_INFO "\nMessage completed successful!\n");
+	    printk(KERN_INFO "Message sent -  %s", kernelbuffer);
 
 	} else if(result>0){
       printk(KERN_INFO "Still need to write %lu caracters to complete the message!\n", result);
@@ -168,7 +169,7 @@ ssize_t serp_write(struct file *filep, const char __user *buff, size_t count, lo
 
 	kfree(kernelbuffer);
 
-	printk(KERN_INFO "The device driver finished printing the message!\n");
+	printk(KERN_INFO "The device driver finished printing the message!\n\n");
 
 	return count;
 }
@@ -273,8 +274,9 @@ static int serp_init(void) {
   if( !(inb(ADR_COM1+UART_LSR) & UART_LSR_THRE) )
   		schedule();
   	else{
-  		outb('K', ADR_COM1+UART_TX);
+  		outb('W', ADR_COM1+UART_TX);
   	}
+
   return result;
 
 }
