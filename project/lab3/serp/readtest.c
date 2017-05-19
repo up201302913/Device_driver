@@ -18,7 +18,7 @@
 int main(int argc, char **argv) {
 
 	int fd, i;
-	char buffer[BUF_SIZE] = {'\0'};
+	char buffer[BUF_SIZE+1] = {'\0'};
 
 	setbuf(stdout, NULL);
 
@@ -34,12 +34,14 @@ int main(int argc, char **argv) {
 		exit (2);
 	}
 
+
 	while(1){
 		int bytes_read = read(fd, buffer, READ_SIZE);
 		printf("%d\n", bytes_read);
 		//printf("Debug, %s\n", strerror(errno));
 		buffer[bytes_read]='\0';
 		printf("%s\n",buffer);
+
 	}
 
 	close(fd);

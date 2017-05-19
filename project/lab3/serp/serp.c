@@ -32,7 +32,7 @@ int serp_major = SERP_MAJOR;
 int serp_minor = SERP_MINOR;
 
 int major = 0, minor = 0;
-
+int read_flag=0;
 struct serp_devs *serp_devices = NULL;
 
 dev_t dev;
@@ -40,21 +40,16 @@ dev_t dev;
 
 int serp_open(struct inode *inode, struct file *filep){
 
-  struct serp_devs *dev;
+  printk(KERN_NOTICE "Device driver on serp_open function!\n");
 
-  printk(KERN_NOTICE "Device driver on opening function!\n");
+  filep->private_data = container_of(inode->i_cdev,struct serp_devs, serp_cdevs);
 
-	nonseekable_open(inode, filep); //Non-seekable DD
-
-  dev = container_of(inode->i_cdev,struct serp_devs, serp_cdevs);
-
-  filep->private_data = dev;
 
   if(filep->private_data == NULL)
-      printk(KERN_WARNING "Private data not inicialized correctly!\n");
+      printk(KERN_WARNING "Private data not initialized correctly!\n");
 
-  printk(KERN_NOTICE "Device driver successful open!\n");
-
+  nonseekable_open(inode, filep); //Non-seekable DD
+  printk(KERN_NOTICE "Device driver successfully open!\n");
 
   return 0;
 }
@@ -76,6 +71,7 @@ int serp_flush(struct inode *inode,fl_owner_t id){
 ssize_t serp_read(struct file *filep, char __user *buff, size_t count, loff_t *offp) {
 
   int i=0;
+  int gif = jiffies;
 
   unsigned char bitgot = 0;
   unsigned long result;
@@ -88,13 +84,19 @@ ssize_t serp_read(struct file *filep, char __user *buff, size_t count, loff_t *o
     return -ENOMEM;
   }
 
-  printk(KERN_INFO "%d", count);
+  printk(KERN_INFO "abacaxi %d\n", count);
 
-  for(i = 0; i < count; i++) {
+  while((i<count) && !read_flag){
+
     bitgot = inb(ADR_COM1 + UART_LSR);
-    while ((bitgot & UART_LSR_DR) == 0) {
+    //star tmer
+    while (!read_flag && ((bitgot & UART_LSR_DR) == 0)) {
       msleep_interruptible(1);
+    //  printk(KERN_INFO "bananafrita\n");
       bitgot = inb(ADR_COM1 + UART_LSR);
+      if(jiffies > gif+msecs_to_jiffies(3000)){
+        read_flag = 1;
+      }
     }
     if((bitgot & (UART_LSR_FE | UART_LSR_OE | UART_LSR_PE)) != 0) {
       kfree(kernelbuffer);
@@ -103,8 +105,10 @@ ssize_t serp_read(struct file *filep, char __user *buff, size_t count, loff_t *o
       kernelbuffer[i] = inb(ADR_COM1 + UART_RX);
       rect++;
     }
+    gif = jiffies;
+    i++;
   }
-
+  read_flag=0;
   result = copy_to_user(buff, kernelbuffer, rect);
 
   if(result == 0) {
@@ -138,7 +142,7 @@ ssize_t serp_write(struct file *filep, const char __user *buff, size_t count, lo
 
 	if(result == 0){
       printk(KERN_INFO "Message completed successful!\n");
-	    printk(KERN_INFO "%s \n", kernelbuffer);
+	    printk(KERN_INFO "WRITE %s \n", kernelbuffer);
 
 	} else if(result>0){
       printk(KERN_INFO "Still need to write %lu caracters to complete the message!\n", result);
@@ -149,7 +153,7 @@ ssize_t serp_write(struct file *filep, const char __user *buff, size_t count, lo
 
 	for(i = 0; i < strlen(kernelbuffer) ; i++){
 	     while((inb(ADR_COM1+UART_LSR) & UART_LSR_THRE) == 0) {
-			 msleep_interruptible(1);
+			      schedule();
 		}
 		outb(kernelbuffer[i], ADR_COM1+UART_TX);
 	}
@@ -258,6 +262,11 @@ static int serp_init(void) {
 
 	printk(KERN_NOTICE "MAJOR NUMBER: %d\n",major);
 
+  if( !(inb(ADR_COM1+UART_LSR) & UART_LSR_THRE) )
+  		schedule();
+  	else{
+  		outb('K', ADR_COM1+UART_TX);
+  	}
   return result;
 
 }
