@@ -32,7 +32,7 @@ int serp_major = SERP_MAJOR;
 int serp_minor = SERP_MINOR;
 
 int major = 0, minor = 0;
-int read_flag=0;
+int read_flag=0,interrupted;
 struct serp_devs *serp_devices = NULL;
 
 dev_t dev;
@@ -56,14 +56,14 @@ int serp_open(struct inode *inode, struct file *filep){
 
 int serp_release(struct inode *inode,struct file *filep){
 
-  printk(KERN_WARNING "Device driver released!\n");
+  printk(KERN_WARNING "\n\nDevice driver released!\n\n");
 
   return 0;
 }
 
 int serp_flush(struct inode *inode,fl_owner_t id){
 
-  printk(KERN_WARNING "Driver flused!\n");
+  printk(KERN_WARNING "Driver flushed!\n");
 
   return 0;
 }
@@ -84,7 +84,12 @@ ssize_t serp_read(struct file *filep, char __user *buff, size_t count, loff_t *o
     return -ENOMEM;
   }
 
-  printk(KERN_INFO "abacaxi %d\n", count);
+
+  if(interrupted == 1){
+    interrupted=0;
+    return 0;
+  }
+  printk(KERN_INFO "Reading from buffer. buffer size: %d\n", count);
 
   while((i<count) && !read_flag){
 
@@ -92,10 +97,11 @@ ssize_t serp_read(struct file *filep, char __user *buff, size_t count, loff_t *o
     //star tmer
     while (!read_flag && ((bitgot & UART_LSR_DR) == 0)) {
       msleep_interruptible(1);
-    //  printk(KERN_INFO "bananafrita\n");
+
       bitgot = inb(ADR_COM1 + UART_LSR);
-      if(jiffies > gif+msecs_to_jiffies(3000)){
+      if(jiffies > gif+msecs_to_jiffies(5000)){
         read_flag = 1;
+        interrupted = 1;
       }
     }
     if((bitgot & (UART_LSR_FE | UART_LSR_OE | UART_LSR_PE)) != 0) {
@@ -108,19 +114,21 @@ ssize_t serp_read(struct file *filep, char __user *buff, size_t count, loff_t *o
     gif = jiffies;
     i++;
   }
+
   read_flag=0;
   result = copy_to_user(buff, kernelbuffer, rect);
 
   if(result == 0) {
-      printk(KERN_INFO "\nCaracters received: %ld\n", (count-result));
+    printk(KERN_INFO "\nCharacters received: %d\n", rect-1);
   } else{
-      if(result > 0) {
-          printk(KERN_INFO "Missing %d caracters!\n", count - (int)bitgot);
-      }
+    if(result > 0) {
+      printk(KERN_INFO "Missing %d characters!\n", count - (int)bitgot);
+      return -EIO;
+    }
   }
 
   kfree(kernelbuffer);
-  return count-result;
+  return rect-1;
 
 }
 
