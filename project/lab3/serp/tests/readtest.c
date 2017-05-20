@@ -10,10 +10,9 @@
 
 #include <errno.h>
 
-
 #define BUF_SIZE 50
 
-#define READ_SIZE 5
+#define READ_SIZE 1
 
 int main(int argc, char **argv) {
 
@@ -36,11 +35,11 @@ int main(int argc, char **argv) {
 
 
 	while(1){
-		int bytes_read = read(fd, buffer, READ_SIZE);
-		printf("%d\n", bytes_read);
+		int result = read(fd, buffer, READ_SIZE);
+		//printf("Result: %d\n", result);
+		if(*buffer == '.') break;
 		//printf("Debug, %s\n", strerror(errno));
-		buffer[bytes_read]='\0';
-		printf("%s\n",buffer);
+		printf("Received: %s\n",buffer);
 
 	}
 
