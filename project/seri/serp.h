@@ -22,6 +22,7 @@ struct serp_devs {
 	spinlock_t rxlock;
 	spinlock_t txlock;
 
+	wait_queue_head_t rxwait;
 };
 
 
